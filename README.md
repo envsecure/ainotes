@@ -125,6 +125,10 @@ obsidian-clone
 chmod +x dist/ObsidianClone-1.15.0.AppImage && ./dist/ObsidianClone-1.15.0.AppImage
 ```
 
+> The AppImage is assembled the same way `appimagetool` does it: the ELF runtime prefix of the
+> official AppImage plus a freshly built squashfs. On systems without FUSE, run it with
+> `APPIMAGE_EXTRACT_AND_RUN=1 ./ObsidianClone-1.15.0.AppImage`.
+
 ### Run from source tree
 
 ```bash

@@ -338,7 +338,8 @@ launcher change fails the build loudly instead of producing an unpatched clone.
 | 8 | Monochrome | pixel histogram of the rendered window | **0** saturated pixels out of 1 600 000 (official build: 1.08 %) — only pure black, white and greys remain |
 | 9 | Token verification | computed styles read back over CDP from the running clone | light: `--background-primary: #ffffff`, `--text-normal: #000000`, `--color-accent: #000000`; dark: `#000000` / `#ffffff` / `#ffffff` — all checks pass (`scripts/verify-theme.mjs`) |
 | 10 | REA observation | `rea list-electron-targets` on the live CDP endpoint | renderer page `app://obsidian.md/index.html`, `Chrome/150.0.7871.250`, `Electron/43.8.4` |
-| 11 | Packaging | `unsquashfs` verification, `dpkg-deb` | `.deb` and `.AppImage` produced and readable |
+| 11 | Packaging | `unsquashfs` verification, `dpkg-deb`, AppImage execution | `.deb` installs cleanly (`ii`) and the installed binary runs; the AppImage extracts, loads the rebuilt payload and renders (0 saturated pixels); `.tar.gz` produced |
+| 12 | AppImage offset | `scripts/find_squashfs_offset.py` | the squashfs superblock is found at 188 392 — the earlier `hsqs` match at 32 609 is a false positive inside the ELF runtime and truncates it |
 
 ---
 
