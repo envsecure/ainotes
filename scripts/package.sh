@@ -87,23 +87,30 @@ Priority: optional
 Architecture: amd64
 Maintainer: obsidian-clone builder <noreply@example.com>
 Installed-Size: $((INSTALLED / 1024))
-Depends: libgtk-3-0 | libgtk-4-1, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libsecret-1-0
+Depends: libgtk-3-0, libnss3, libasound2t64 | libasound2, libatk1.0-0, libatk-bridge2.0-0, libatspi2.0-0, libcups2t64 | libcups2, libdrm2, libgbm1, libxkbcommon0, libxcomposite1, libxdamage1, libxrandr2, libxshmfence1, libcairo2, libpango-1.0-0, libxss1
+Recommends: libnotify4, libsecret-1-0, libxtst6, xdg-utils, fonts-inter
 Description: Obsidian Clone (monochrome)
  A from-source rebuild of the Obsidian 1.15.0 desktop application with a
  minimal white/black theme. All application features are preserved.
 EOF
 
-dpkg-deb --build --root-owner-group "$DEBROOT" "$OUTDIR/obsidian-clone_${VERSION}_amd64.deb" >/dev/null
+dpkg-deb --build --root-owner-group -Zgzip "$DEBROOT" "$OUTDIR/obsidian-clone_${VERSION}_amd64.deb" >/dev/null
 log "deb: $OUTDIR/obsidian-clone_${VERSION}_amd64.deb"
 
 # --- AppImage ---------------------------------------------------------------
 if [[ -f "$ORIG_APPIMAGE" ]]; then
   log "building AppImage"
   # Extract the AppImage runtime (the ELF prefix in front of the squashfs).
-  OFFSET=$(grep -abo 'hsqs' "$ORIG_APPIMAGE" | head -1 | cut -d: -f1)
+  # "hsqs" also occurs inside the runtime, so the real superblock offset is
+  # resolved by validating the squashfs superblock fields.
+  OFFSET=$(python3 "$ROOT/scripts/find_squashfs_offset.py" "$ORIG_APPIMAGE" 2>/dev/null)
   [[ -n "$OFFSET" ]] || { echo "could not locate squashfs payload" >&2; exit 1; }
   head -c "$OFFSET" "$ORIG_APPIMAGE" > "$BUILD/appimage-runtime"
   chmod +x "$BUILD/appimage-runtime"
+  if ! head -c 4 "$BUILD/appimage-runtime" | grep -q ELF; then
+    echo "extracted AppImage runtime is not an ELF binary" >&2
+    exit 1
+  fi
 
   rm -f "$BUILD/appfs.squashfs"
   mksquashfs "$APPDIR" "$BUILD/appfs.squashfs" -comp xz -noappend -quiet \
@@ -114,9 +121,9 @@ if [[ -f "$ORIG_APPIMAGE" ]]; then
   chmod +x "$APPIMAGE_OUT"
 
   # verify the produced image really is a valid AppImage
-  NEW_OFF=$(grep -abo 'hsqs' "$APPIMAGE_OUT" | head -1 | cut -d: -f1)
-  if unsquashfs -s -o "$NEW_OFF" "$APPIMAGE_OUT" >/dev/null 2>&1; then
-    log "AppImage: $APPIMAGE_OUT (verified)"
+  NEW_OFF=$(python3 "$ROOT/scripts/find_squashfs_offset.py" "$APPIMAGE_OUT" 2>/dev/null)
+  if [[ -n "$NEW_OFF" ]] && unsquashfs -s -o "$NEW_OFF" "$APPIMAGE_OUT" >/dev/null 2>&1; then
+    log "AppImage: $APPIMAGE_OUT (verified, squashfs at $NEW_OFF)"
   else
     echo "AppImage verification failed" >&2
     exit 1

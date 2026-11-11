@@ -109,6 +109,37 @@ Key recovered facts:
   REA's *active* Electron provider refuses to attach to it and why the stock Electron runtime was
   used for the scenario capture instead.
 
+### Electron fuse table of the shipped runtime
+
+`rea inspect-electron-fuses ./clone/obsidian` (evidence in
+`docs/evidence/electron-fuses.json`, ELF slice 0, sentinel at file offset 36 162 864):
+
+| Fuse | State |
+| --- | --- |
+| `RunAsNode` | disabled |
+| `EnableCookieEncryption` | enabled |
+| `EnableNodeOptionsEnvironmentVariable` | disabled |
+| `EnableNodeCliInspectArguments` | disabled |
+| **`EnableEmbeddedAsarIntegrityValidation`** | **disabled** |
+| `OnlyLoadAppFromAsar` | disabled |
+| `LoadBrowserProcessSpecificV8Snapshot` | disabled |
+| `GrantFileProtocolExtraPrivileges` | enabled |
+| `WasmTrapHandlers` | enabled |
+
+Two of these decide the whole approach:
+
+* **`EnableEmbeddedAsarIntegrityValidation` is disabled** — Electron does not verify a hash of
+  `resources/app.asar`. A rebuilt payload is therefore accepted by the runtime as-is; had the
+  fuse been enabled, the clone would have needed the original archive's integrity header (or a
+  rebuilt Electron with the fuse off).
+* **`EnableNodeCliInspectArguments` is disabled** — the Node inspector cannot be attached from
+  the command line, which is exactly the `unsupported_target` reason REA reported for the active
+  Electron provider. The passive CDP lane still works because it uses the browser-level
+  DevTools protocol rather than the Node inspector.
+
+The `RunAsNode` and `EnableNodeOptionsEnvironmentVariable` fuses are disabled as well, so the
+runtime is hardened against `ELECTRON_RUN_AS_NODE` and `NODE_OPTIONS` injection.
+
 ---
 
 ## 5. REA static analysis
@@ -141,7 +172,40 @@ The curated extract is committed as `docs/evidence/application-analysis-summary.
 
 The analysis was re-run scoped to the first-party sources only
 (`--source-paths-json`, `--analysis-timeout-ms 1200000`, `--max-heap-mb 4096`), which is the
-correct lane for this target: third-party bundles carry no application behaviour.
+correct lane for this target: third-party bundles carry no application behaviour. That run
+completed successfully (exit 0, evidence `ev_068aa2bce0bd58afe240c64aae17c7f7aff3812a738c3a639792c516a67db984`):
+
+| Metric | First-party lane |
+| --- | --- |
+| Relevant files | 42 (13 selected, 29 unselected) |
+| Parsed JavaScript files | 13 / 0 skipped |
+| Visited AST nodes | 1 532 573 |
+| Findings | 947 |
+| JavaScript modules | 64 |
+| Parse failures | 0 |
+| Application-graph nodes | 835 (615 modules, 48 IPC channels, 48 IPC handlers, 32 endpoints, 32 assets, 10 artefacts, 7 workers, 7 storage, 29 unknowns) |
+| IPC | 48 literal channels, 48 main handlers, 0 dynamic channels, 1 sender-validation observation |
+| Coverage | `complete-within-view` (647/647 items examined) |
+
+### Recovered IPC surface (48 literal channels)
+
+`vault`, `vault-list`, `vault-open`, `vault-remove`, `vault-move`, `vault-message`,
+`get-default-vault-path`, `get-sandbox-vault-path`, `open-file`, `open-url`, `request-url`,
+`file-url`, `create-browser-session`, `context-menu`, `render-menu`, `set-menu`,
+`update-menu-items`, `help`, `starter`, `terms`, `policy`, `resources`, `sandbox`, `frame`,
+`register-cli`, `cli`, `version`, `insider-build`, `latest-public-version`, `check-update`,
+`update`, `disable-update`, `disable-gpu`, `relaunch`, `is-quitting`, `is-closing`,
+`documents-dir`, `desktop-dir`, `get-documents-path`, `get-icon`, `set-icon`, `print-to-pdf`,
+`trash`, `copy-asar`, `plugin-script-root`, `set-language`, `adblock-lists`,
+`adblock-frequency`.
+
+This channel set is the main-process contract of the application. It also shows why the
+updater had to be handled in the *launcher* rather than in the payload: `check-update`,
+`update`, `latest-public-version`, `relaunch` and `disable-update` are the renderer's view of
+the same update machinery the launcher drives.
+
+The curated extracts are committed as `docs/evidence/firstparty-ipc-channels.json` and
+`docs/evidence/application-analysis-summary.json`.
 
 ### REA runtime capture
 
@@ -152,8 +216,18 @@ rea capture-electron-scenario scenario.json --format json
 * Against Obsidian's hardened binary → `unsupported_target`: the `EnableNodeCliInspectArguments`
   fuse is off, so active capture cannot attach (REA's own remediation suggests a stock Electron
   runtime).
-* Against a **stock Electron 43.8.4** runtime with the rebuilt `app.asar` → the capture attaches
-  and records the clone's window, navigation, IPC and lifecycle events.
+* Against a **stock Electron 43.8.4** runtime with the rebuilt `app.asar` → the provider
+  launches and instruments the app (the Electron inspector and the CDP endpoint come up, the
+  REA hook is loaded), but Playwright's launch handshake still exceeds its 58 s budget for this
+  application, so the run ends in `execution_failure` rather than a completed scenario.
+* The **passive CDP lane** works and was used instead:
+  `rea list-electron-targets http://127.0.0.1:9222` (evidence
+  `ev_f55aa6f9f62d0be2247df246c25fe060d18d9f494200c09b1db2410457db7d5d`) reported the live
+  browser identity `Chrome/150.0.7871.250`, `Electron/43.8.4`, user agent
+  `obsidian/1.15.0 …`, and listed the renderer page
+  `app://obsidian.md/index.html` (title `New tab - sandbox - Obsidian 1.15.0`) plus two workers.
+  REA's file-page filter deliberately excludes the `app://` page (`unsupported_url: 1`),
+  which independently confirms the custom-scheme architecture.
 
 ---
 
@@ -168,6 +242,24 @@ Obsidian 1.15 uses a two-level token system, and the whole design is drivable fr
   `--code-*`, `--tag-*`, `--link-*`, `--bases-*`, …) that reference the base ramp.
 * **accent** — `--accent-h/s/l` → `hsl()` → `--color-accent{,-1,-2}`; Obsidian writes the user's
   accent choice as an **inline style on `<body>`**, so a stylesheet override needs `!important`.
+* **theme selection** — the vault configuration key `theme` carries the *internal* theme names
+  `obsidian` (the **dark** theme) and `moonstone` (the **light** theme), plus `system`; the
+  renderer maps them onto the body classes with `theme-dark` / `theme-light`:
+
+  ```js
+  updateTheme() {
+    let t = this.vault.getConfig("theme"),   // "obsidian" | "moonstone" | "system"
+        e = t === "system",
+        i = t === "obsidian";
+    …
+    document.body.toggleClass("theme-dark", i);
+    document.body.toggleClass("theme-light", !i);
+  }
+  ```
+
+  (the names are inverted relative to their appearance — `obsidian` is the dark theme).
+  The setting lives in `<vault>/.obsidian/appearance.json`, which is what the verification
+  runs switch to exercise both palettes.
 
 Because of that structure the monochrome theme replaces the **ramp** (one place) plus the accent,
 instead of overriding hundreds of component rules. Semantic status colours (`--color-red`,
@@ -187,6 +279,7 @@ structural becomes greyscale.
 | Add `OBSIDIAN_CLONE_USER_DATA` | lets the clone run beside an official installation (separate profile, separate single-instance lock). |
 | Keep the application id, desktop file and `obsidian://` protocol handler | `x-scheme-handler/obsidian` and the `md.obsidian.Obsidian` startup class keep working, so no feature is lost. |
 | Reuse the shipped Electron 43.8.4 runtime | identical runtime, identical GPU/compositor behaviour, no re-implementation risk. |
+| Disable LCD subpixel text (`--disable-lcd-text`) | Chromium's RGB subpixel antialiasing paints colour fringes on every glyph edge; it was the *only* remaining colour in the window (0.27 % of pixels). With the switch the render is 100 % greyscale. |
 
 ### Payload delta (official → clone)
 
@@ -242,9 +335,10 @@ launcher change fails the build loudly instead of producing an unpatched clone.
 | 5 | Updater disabled | `obsidian.log` | “Loaded main app package …”, no update check |
 | 6 | Profile isolation | file system | whole profile written into the isolated user-data dir |
 | 7 | Runtime independence | stock Electron 43.8.4 + rebuilt `app.asar` | identical rendering |
-| 8 | Monochrome | pixel histogram of the screenshot | 1 360 224 of 1 600 000 px are pure black/white; only ~0.08 % residual saturation from upstream artwork |
-| 9 | REA observation | `rea capture-electron-scenario` on stock Electron | window/navigation/IPC/lifecycle evidence recorded |
-| 10 | Packaging | `unsquashfs` verification, `dpkg-deb` | `.deb` and `.AppImage` produced and readable |
+| 8 | Monochrome | pixel histogram of the rendered window | **0** saturated pixels out of 1 600 000 (official build: 1.08 %) — only pure black, white and greys remain |
+| 9 | Token verification | computed styles read back over CDP from the running clone | light: `--background-primary: #ffffff`, `--text-normal: #000000`, `--color-accent: #000000`; dark: `#000000` / `#ffffff` / `#ffffff` — all checks pass (`scripts/verify-theme.mjs`) |
+| 10 | REA observation | `rea list-electron-targets` on the live CDP endpoint | renderer page `app://obsidian.md/index.html`, `Chrome/150.0.7871.250`, `Electron/43.8.4` |
+| 11 | Packaging | `unsquashfs` verification, `dpkg-deb` | `.deb` and `.AppImage` produced and readable |
 
 ---
 

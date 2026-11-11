@@ -349,10 +349,36 @@
 	--font-text-theme: var(--font-text);
 }
 
+/* The Obsidian mark is painted with SVG gradients; flatten it to the
+   foreground colour so the whole window stays monochrome. */
+svg path[fill^="url(#logo"] {
+	fill: currentColor !important;
+}
+
+.titlebar-button.mod-logo {
+	color: var(--m-fg) !important;
+}
+
 /* Plain-text surfaces: no noise, no gradients */
 body {
 	background-color: var(--m-bg);
 	background-image: none;
+}
+
+/* Status-bar chrome icons (sync state, help, settings) stay monochrome.
+   Semantic colours inside the content (error messages, callouts) keep
+   their meaning, only the window chrome loses its colour. */
+.status-bar .status-bar-item-icon,
+.status-bar .sync-status-icon,
+.status-bar .status-bar-item-icon.mod-error,
+.status-bar .status-bar-item-icon.mod-warning,
+.status-bar .status-bar-item-icon.mod-success {
+	color: var(--m-fg-muted) !important;
+}
+
+.status-bar .status-bar-item-icon:hover,
+.status-bar .status-bar-item.mod-clickable:hover > svg {
+	color: var(--m-fg) !important;
 }
 
 /* The workspace is a single flat sheet of white / black */

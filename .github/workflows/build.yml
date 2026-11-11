@@ -1,0 +1,59 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: build the clone (ubuntu, x64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y squashfs-tools
+
+      - name: Fetch the official Obsidian 1.15.0 Linux release
+        run: scripts/fetch-sources.sh --version 1.15.0
+
+      - name: Build the clone
+        run: scripts/build.sh
+
+      - name: Package
+        run: |
+          ls -la dist/
+          dpkg-deb --info dist/obsidian-clone_1.15.0_amd64.deb
+          # the AppImage is a runtime prefix + squashfs; verify the appended image
+          OFFSET=$(grep -abo 'hsqs' dist/ObsidianClone-1.15.0.AppImage | head -1 | cut -d: -f1)
+          unsquashfs -s -o "$OFFSET" dist/ObsidianClone-1.15.0.AppImage | head -5
+
+      - name: Verify the payload parity
+        run: |
+          rm -rf verify
+          mkdir -p verify
+          npx --yes @electron/asar extract clone/resources/obsidian.asar verify/clone
+          npx --yes @electron/asar extract clone/resources/app.asar verify/launcher
+          echo "--- payload delta (expected: 3 html files + clone-theme.css) ---"
+          diff -rq extracted verify/clone || true
+          echo "--- launcher delta (expected: main.js only) ---"
+          diff -rq launcher verify/launcher || true
+
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: obsidian-clone-linux-amd64
+          path: |
+            dist/obsidian-clone_1.15.0_amd64.deb
+            dist/ObsidianClone-1.15.0.AppImage
+            dist/obsidian-clone-1.15.0-linux-amd64.tar.gz
+          if-no-files-found: error

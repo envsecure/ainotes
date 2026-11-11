@@ -59,6 +59,12 @@ inventory and the limits of the analysis.
 
 ## 2. The monochrome theme
 
+| light variant | dark variant |
+| --- | --- |
+| ![clone light](docs/screenshots/clone-light.png) | ![clone dark](docs/screenshots/clone-dark.png) |
+
+Both renders contain **zero** saturated pixels — only pure black, white and greys.
+
 The theme lives in [`theme/clone-theme.css`](theme/clone-theme.css) and is linked
 after Obsidian's own stylesheet in every HTML entry point
 (`index.html`, `starter.html`, `help.html`).
@@ -148,7 +154,9 @@ builds:
 | Launch | The clone boots under Electron 43.8.4, opens a vault, renders the ribbon, file explorer, tabs, editor and the 1.15 “New note / New base / New canvas / Go to file” launcher. |
 | Update channel | `obsidian.log` shows *“Loaded main app package …”* and **no** update check — the updater is off. |
 | Isolation | The clone wrote its whole profile into the isolated user-data directory, leaving the system profile untouched. |
-| REA observation | `rea capture-electron-scenario` recorded the clone's window, navigation, IPC and lifecycle events with Evidence. |
+| Token check | Computed styles read back over CDP from the running clone: `--background-primary: #ffffff`, `--text-normal: #000000`, `--color-accent: #000000`. |
+| Runtime independence | The same payload renders identically on a stock Electron 43.8.4 runtime. |
+| REA observation | `rea list-electron-targets` recorded the live renderer page `app://obsidian.md/index.html` (`Chrome/150.0.7871.250`, `Electron/43.8.4`). |
 
 ---
 
@@ -161,7 +169,27 @@ scripts/build.sh             build the clone (payload -> asar -> AppDir)
 scripts/package.sh           .deb / .AppImage / .tar.gz
 scripts/patch_launcher.py    the launcher patch (updater + isolated user data)
 scripts/run-app.sh           run an AppDir under Xvfb and screenshot it
+scripts/verify-theme.mjs     read the computed tokens back over CDP and assert monochrome
 docs/REPORT.md               reverse-engineering report and evidence inventory
+docs/evidence/               curated REA extracts (analysis summary, IPC channels)
+```
+
+### Verifying a running clone
+
+```bash
+# start the clone with a CDP port
+clone/obsidian --no-sandbox --remote-debugging-port=9222 &
+
+# assert the palette is monochrome (light and dark variants)
+node scripts/verify-theme.mjs --cdp http://127.0.0.1:9222 --expect light
+node scripts/verify-theme.mjs --cdp http://127.0.0.1:9222 --expect dark
+```
+
+Switching the vault to the dark palette is a configuration change, not a code change:
+
+```json
+// <vault>/.obsidian/appearance.json
+{ "theme": "obsidian" }   // "obsidian" = dark, "moonstone" = light
 ```
 
 Upstream artefacts (`original/`, `extracted/`, `launcher/`, `appimage-extract/`)
