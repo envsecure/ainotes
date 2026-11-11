@@ -1,0 +1,26 @@
+# Upstream release artefacts - fetched by scripts/fetch-sources.sh
+# (Obsidian's application code is proprietary and is never committed here)
+/original/
+/extracted/
+/launcher/
+/appimage-extract/
+/readable/
+
+# Build output
+/build/
+/clone/
+/dist/
+
+# Tooling
+/node_modules/
+/stock-electron/
+/verify/
+/rea-evidence/*.evidence.json
+/rea-evidence/*.json
+npm-debug.log*
+*.log
+.DS_Store
+
+# REA raw evidence bundles are large; curated extracts live in docs/evidence/
+/rea-evidence/
+!docs/evidence/*.log

@@ -1,0 +1,399 @@
+/* ==========================================================================
+   Obsidian Clone — "Monochrome" minimal theme (pure white / pure black)
+   --------------------------------------------------------------------------
+   Loaded after Obsidian's own app.css so it wins on equal specificity.
+   Only colour, border, radius and shadow tokens are touched.
+   Layout, typography, spacing, behaviour and every feature stay untouched.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Palette
+   The whole theme is driven by these --m-* aliases, so the same component
+   rules below work for the light and the dark variant.
+   -------------------------------------------------------------------------- */
+.theme-light {
+	color-scheme: light;
+
+	--m-bg: #ffffff;
+	--m-bg-alt: #fafafa;
+	--m-bg-2: #f4f4f4;
+	--m-bg-3: #ebebeb;
+	--m-border: #e2e2e2;
+	--m-border-strong: #c4c4c4;
+	--m-fg: #000000;
+	--m-fg-muted: #4a4a4a;
+	--m-fg-faint: #8a8a8a;
+	--m-hover: rgba(0, 0, 0, 0.045);
+	--m-active: rgba(0, 0, 0, 0.09);
+	--m-selection: rgba(0, 0, 0, 0.12);
+	--m-accent: #000000;
+	--m-on-accent: #ffffff;
+	--m-shadow: rgba(0, 0, 0, 0.1);
+}
+
+.theme-dark {
+	color-scheme: dark;
+
+	--m-bg: #000000;
+	--m-bg-alt: #0c0c0c;
+	--m-bg-2: #131313;
+	--m-bg-3: #1c1c1c;
+	--m-border: #262626;
+	--m-border-strong: #3d3d3d;
+	--m-fg: #ffffff;
+	--m-fg-muted: #b0b0b0;
+	--m-fg-faint: #757575;
+	--m-hover: rgba(255, 255, 255, 0.055);
+	--m-active: rgba(255, 255, 255, 0.11);
+	--m-selection: rgba(255, 255, 255, 0.16);
+	--m-accent: #ffffff;
+	--m-on-accent: #000000;
+	--m-shadow: rgba(0, 0, 0, 0.65);
+}
+
+/* --------------------------------------------------------------------------
+   2. Neutralise Obsidian's base colour ramp
+   These feed almost every semantic token below, so replacing the ramp is
+   what actually turns the whole UI monochrome.
+   -------------------------------------------------------------------------- */
+.theme-light,
+.theme-dark {
+	--color-base-00: var(--m-bg);
+	--color-base-05: var(--m-bg);
+	--color-base-10: var(--m-bg-alt);
+	--color-base-20: var(--m-bg-2);
+	--color-base-25: var(--m-bg-3);
+	--color-base-30: var(--m-border);
+	--color-base-35: var(--m-border-strong);
+	--color-base-40: var(--m-border-strong);
+	--color-base-50: var(--m-fg-faint);
+	--color-base-60: var(--m-fg-faint);
+	--color-base-70: var(--m-fg-muted);
+	--color-base-100: var(--m-fg);
+
+	--mono-0: var(--m-bg);
+	--mono-100: var(--m-fg);
+
+	--background-primary: var(--m-bg);
+	--background-primary-alt: var(--m-bg-alt);
+	--background-secondary: var(--m-bg-2);
+	--background-secondary-alt: var(--m-bg-3);
+	--background-modifier-border: var(--m-border);
+	--background-modifier-border-hover: var(--m-border-strong);
+	--background-modifier-border-focus: var(--m-fg);
+	--background-modifier-hover: var(--m-hover);
+	--background-modifier-active-hover: var(--m-active);
+	--background-modifier-form-field: var(--m-bg);
+	--background-modifier-form-field-hover: var(--m-bg-alt);
+	--background-modifier-box-shadow: transparent;
+	--background-modifier-cover: var(--m-hover);
+
+	--text-normal: var(--m-fg);
+	--text-muted: var(--m-fg-muted);
+	--text-faint: var(--m-fg-faint);
+	--text-on-accent: var(--m-on-accent);
+	--text-on-accent-inverted: var(--m-fg);
+	--text-accent: var(--m-fg);
+	--text-accent-hover: var(--m-fg);
+	--text-selection: var(--m-selection);
+
+	--interactive-normal: var(--m-bg);
+	--interactive-hover: var(--m-bg-alt);
+	--interactive-accent: var(--m-accent);
+	--interactive-accent-hover: var(--m-accent);
+
+	--link-color: var(--m-fg);
+	--link-color-hover: var(--m-fg);
+	--link-external-color: var(--m-fg);
+	--link-external-color-hover: var(--m-fg);
+	--link-unresolved-color: var(--m-fg-muted);
+	--link-unresolved-opacity: 0.65;
+	--link-unresolved-decoration-color: var(--m-border-strong);
+	--link-decoration-thickness: 1px;
+}
+
+/* --------------------------------------------------------------------------
+   3. Accent colour -> pure black / pure white
+   Obsidian writes the accent as an inline style on <body> when the user
+   picks a colour, so these must be !important to stay monochrome.
+   -------------------------------------------------------------------------- */
+.theme-light {
+	--accent-h: 0 !important;
+	--accent-s: 0% !important;
+	--accent-l: 0% !important;
+	--color-accent: var(--m-accent) !important;
+	--color-accent-1: var(--m-accent) !important;
+	--color-accent-2: var(--m-accent) !important;
+}
+
+.theme-dark {
+	--accent-h: 0 !important;
+	--accent-s: 0% !important;
+	--accent-l: 100% !important;
+	--color-accent: var(--m-accent) !important;
+	--color-accent-1: var(--m-accent) !important;
+	--color-accent-2: var(--m-accent) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Flat, sharp, minimal surfaces
+   -------------------------------------------------------------------------- */
+.theme-light,
+.theme-dark {
+	--shadow-xs: none;
+	--shadow-s: none;
+	--shadow-l: none;
+	--shadow-edges: none;
+	--raised-shadow: none;
+	--menu-shadow: none;
+	--tooltip-shadow: none;
+	--modal-shadow: none;
+	--notice-shadow: none;
+	--pdf-shadow: 0 0 0 1px var(--m-border);
+	--pdf-thumbnail-shadow: 0 0 0 1px var(--m-border);
+	--input-shadow: inset 0 0 0 1px var(--m-border);
+	--input-shadow-hover: inset 0 0 0 1px var(--m-border-strong);
+
+	--radius-s: 2px;
+	--radius-m: 3px;
+	--radius-l: 4px;
+	--radius-xl: 4px;
+	--input-radius: 2px;
+	--button-radius: 2px;
+	--checkbox-radius: 2px;
+	--tag-radius: 2px;
+	--nav-item-radius: 2px;
+	--metadata-property-radius: 2px;
+	--metadata-property-radius-hover: 2px;
+	--metadata-property-radius-focus: 2px;
+	--callout-radius: 2px;
+	--code-radius: 2px;
+	--image-radius: 0;
+	--corner-shape: square;
+}
+
+/* --------------------------------------------------------------------------
+   5. Component accents
+   -------------------------------------------------------------------------- */
+.theme-light,
+.theme-dark {
+	/* Tags */
+	--tag-color: var(--m-fg-muted);
+	--tag-color-hover: var(--m-fg);
+	--tag-background: transparent;
+	--tag-background-hover: var(--m-hover);
+	--tag-border-width: 1px;
+	--tag-border-color: var(--m-border-strong);
+	--tag-border-color-hover: var(--m-fg);
+
+	/* Code blocks and inline code */
+	--code-background: var(--m-bg-alt);
+	--code-normal: var(--m-fg);
+	--code-comment: var(--m-fg-faint);
+	--code-function: var(--m-fg);
+	--code-important: var(--m-fg);
+	--code-keyword: var(--m-fg);
+	--code-operator: var(--m-fg-muted);
+	--code-property: var(--m-fg);
+	--code-punctuation: var(--m-fg-muted);
+	--code-string: var(--m-fg-muted);
+	--code-tag: var(--m-fg-muted);
+	--code-value: var(--m-fg-muted);
+
+	/* Tables */
+	--table-border-color: var(--m-border);
+	--table-row-background-hover: var(--m-hover);
+	--table-selection: var(--m-active);
+	--table-selection-border-color: var(--m-border-strong);
+
+	/* Menus, suggestions, modals */
+	--menu-background: var(--m-bg);
+	--dropdown-background: var(--m-bg);
+	--suggestion-background: var(--m-active);
+	--modal-background: var(--m-bg);
+	--popover-background: var(--m-bg);
+	--tooltip-background: var(--m-fg);
+	--tooltip-color: var(--m-bg);
+
+	/* Status bar, title bar, ribbon */
+	--status-bar-background: var(--m-bg);
+	--status-bar-text-color: var(--m-fg-muted);
+	--titlebar-background: var(--m-bg);
+	--titlebar-background-focused: var(--m-bg);
+	--titlebar-text-color: var(--m-fg-muted);
+	--titlebar-text-color-focused: var(--m-fg);
+	--ribbon-background: var(--m-bg);
+	--ribbon-background-collapsed: var(--m-bg);
+	--ribbon-active-background: var(--m-active);
+	--ribbon-icon-color: var(--m-fg-muted);
+	--ribbon-icon-color-hover: var(--m-fg);
+
+	/* Sidebar */
+	--sidebar-background: var(--m-bg);
+	--sidebar-border-color: var(--m-border);
+	--sidebar-section-header-background: var(--m-bg);
+	--sidebar-file-text-color: var(--m-fg);
+	--sidebar-file-text-color-active: var(--m-fg);
+	--sidebar-file-text-color-hover: var(--m-fg);
+	--sidebar-file-text-color-modified: var(--m-fg-muted);
+	--sidebar-active-tab-background: var(--m-bg);
+	--sidebar-active-tab-background-hover: var(--m-bg);
+
+	/* Tabs */
+	--tab-text-color: var(--m-fg-faint);
+	--tab-text-color-active: var(--m-fg);
+	--tab-text-color-focused: var(--m-fg);
+	--tab-text-color-focused-active: var(--m-fg);
+	--tab-text-color-focused-highlighted: var(--m-fg);
+	--tab-text-color-focused-active-current: var(--m-fg);
+	--tab-border-color: var(--m-border);
+	--tab-divider-color: var(--m-border);
+
+	/* Editor */
+	--inline-title-color: var(--m-fg);
+	--inline-title-decoration-color: var(--m-border);
+	--text-selection-highlight: var(--m-selection);
+	--caret-color: var(--m-fg);
+	--cm-caret-color: var(--m-fg);
+	--cm-selection-background: var(--m-selection);
+	--cm-selection-match-background: var(--m-active);
+	--cm-active-line-background: var(--m-hover);
+	--cm-gutter-text-color: var(--m-fg-faint);
+	--cm-gutter-active-line-text-color: var(--m-fg-muted);
+	--cm-line-numbers-active: var(--m-fg-muted);
+	--cm-formatting-color: var(--m-fg-faint);
+	--cm-formatting-color-hover: var(--m-fg);
+	--cm-matched-text-color: var(--m-fg);
+	--cm-match-background: var(--m-active);
+
+	/* Search */
+	--search-result-background: var(--m-hover);
+	--search-result-shadow: none;
+
+	/* Graphs, canvas, bases */
+	--graph-node: var(--m-fg-muted);
+	--graph-node-text: var(--m-fg-muted);
+	--graph-node-tag: var(--m-fg-muted);
+	--graph-line: var(--m-border-strong);
+	--graph-line-color: var(--m-border-strong);
+	--canvas-color: var(--m-border-strong);
+	--canvas-background: var(--m-bg);
+	--canvas-grid-color: var(--m-border);
+	--canvas-controls-background: var(--m-bg);
+	--canvas-controls-foreground: var(--m-fg-muted);
+	--bases-table-header-background: var(--m-bg-alt);
+	--bases-table-header-color: var(--m-fg-muted);
+	--bases-table-group-background: var(--m-bg-alt);
+	--bases-kanban-column-background: var(--m-bg-alt);
+	--bases-kanban-card-background: var(--m-bg);
+	--bases-cards-background: var(--m-bg);
+
+	/* Callouts keep their shape but lose their colour */
+	--callout-color: var(--m-fg);
+	--callout-icon-color: var(--m-fg);
+
+	/* Popovers, notifications, misc */
+	--background-modifier-message: var(--m-fg);
+	--text-on-message: var(--m-bg);
+	--divider-color: var(--m-border);
+	--divider-color-hover: var(--m-border-strong);
+	--nav-item-color: var(--m-fg-muted);
+	--nav-item-color-hover: var(--m-fg);
+	--nav-item-color-active: var(--m-fg);
+	--nav-item-background-selected: var(--m-active);
+	--nav-item-background-active: var(--m-hover);
+	--nav-folder-color: var(--m-fg);
+	--nav-folder-title-color: var(--m-fg-muted);
+	--nav-collapse-arrow-color: var(--m-fg-faint);
+	--nav-collapse-arrow-color-hover: var(--m-fg);
+	--icon-color: var(--m-fg-muted);
+	--icon-color-hover: var(--m-fg);
+	--icon-color-active: var(--m-fg);
+	--icon-color-focused: var(--m-fg);
+	--icon-color-secondary: var(--m-fg-faint);
+	--icon-color-secondary-hover: var(--m-fg-muted);
+	--text-selection-2: var(--m-selection);
+	--checkbox-background: var(--m-bg);
+	--checkbox-background-checked: var(--m-fg);
+	--checkbox-checked-color: var(--m-bg);
+	--checkbox-checked-stroke-color: var(--m-bg);
+	--slider-thumb-background: var(--m-fg);
+	--slider-thumb-background-hover: var(--m-fg);
+	--slider-track-background: var(--m-bg-3);
+	--toggle-switch-background: var(--m-bg-3);
+	--toggle-switch-background-enabled: var(--m-fg);
+	--toggle-thumb-color: var(--m-bg);
+	--progress-bar-background: var(--m-bg-3);
+	--progress-bar-fill-background: var(--m-fg);
+	--drop-shadow: none;
+	--scrollbar-thumb-bg: var(--m-border-strong);
+	--scrollbar-thumb-bg-hover: var(--m-fg-muted);
+	--scrollbar-track-bg: transparent;
+	--scrollbar-active-thumb-bg: var(--m-fg-muted);
+	--scrollbar-thumb-border-radius: 0;
+}
+
+/* --------------------------------------------------------------------------
+   6. Small structural touches (still purely cosmetic)
+   -------------------------------------------------------------------------- */
+.theme-light,
+.theme-dark {
+	/* Hairline separators instead of heavy dividers */
+	--divider-width: 1px;
+
+	/* Focus rings stay monochrome */
+	--background-modifier-border-focus: var(--m-fg);
+	--focus-ring-color: var(--m-fg);
+
+	/* Slightly tighter letterforms for the monochrome look */
+	--font-text-theme: var(--font-text);
+}
+
+/* Plain-text surfaces: no noise, no gradients */
+body {
+	background-color: var(--m-bg);
+	background-image: none;
+}
+
+/* The workspace is a single flat sheet of white / black */
+.workspace,
+.workspace-split,
+.workspace-tabs,
+.workspace-leaf,
+.view-content {
+	background-color: var(--m-bg);
+}
+
+.workspace-drawer,
+.workspace-split.mod-right-split > .workspace-tab-header-container,
+.workspace-split.mod-left-split > .workspace-tab-header-container {
+	background-color: var(--m-bg);
+}
+
+/* Menus and popovers: flat white cards with a hairline border */
+.menu,
+.suggestion,
+.prompt,
+.modal {
+	background-color: var(--m-bg);
+	border: 1px solid var(--m-border);
+	box-shadow: none;
+}
+
+/* Graph and canvas chrome */
+.graph-view.color-fill:hover .tree-item-inner,
+.graph-view.color-fill-selected:hover .tree-item-inner {
+	color: var(--m-fg);
+}
+
+/* Remove coloured selection outlines in favour of the monochrome border */
+::selection {
+	background-color: var(--m-selection);
+	color: var(--m-fg);
+}
+
+/* Inline title, file header and status bar stay flat */
+.inline-title,
+.status-bar {
+	text-shadow: none;
+}
