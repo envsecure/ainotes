@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /* ==========================================================================
- * Verify the clone's monochrome theme by reading the computed styles back from
+ * Verify Ainotes' monochrome theme by reading the computed styles back from
  * the running application over the Chrome DevTools Protocol.
  *
  *   node scripts/verify-theme.mjs [--cdp http://127.0.0.1:9222] [--expect light|dark]
  *
- * Launches nothing itself: start the clone with --remote-debugging-port first
+ * Launches nothing itself: start Ainotes with --remote-debugging-port first
  * (scripts/run-app.sh can do that), then run this against the live endpoint.
  * Exits non-zero when a token is not monochrome.
  * ========================================================================== */

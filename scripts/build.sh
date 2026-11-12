@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Build "Obsidian Clone" — a from-source rebuild of the Obsidian 1.15.0 Linux
-# application with a minimal monochrome (white/black) theme.
+# Build "Ainotes" — a from-source Linux desktop build with a minimal
+# monochrome (white/black) theme.
 #
 #   scripts/build.sh [--variant=both|light|dark] [--skip-package]
 #
 # Pipeline
-#   1. payload  : extracted app payload + monochrome theme -> obsidian.asar
+#   1. payload  : fetched application payload + rebrand + monochrome theme
 #   2. launcher : patched Electron bootstrap        -> app.asar
-#   3. runtime  : Electron 43.8.4 runtime           -> AppDir
+#   3. runtime  : Electron runtime                  -> AppDir
 #   4. package  : .deb / .AppImage / .tar.gz
 #
 # Everything is reproducible from the files in ./original and ./extracted.
@@ -19,9 +19,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PAYLOAD_SRC="$ROOT/extracted"
 LAUNCHER_SRC="$ROOT/launcher"
 RUNTIME_SRC="$ROOT/appimage-extract/squashfs-root"
-THEME_SRC="$ROOT/theme/clone-theme.css"
+THEME_SRC="$ROOT/theme/ainotes-theme.css"
+ICON_SRC="$ROOT/assets/ainotes.png"
 BUILD="$ROOT/build"
-OUT="$ROOT/clone"
+OUT="$ROOT/ainotes"
 DIST="$ROOT/dist"
 VARIANT="both"
 SKIP_PACKAGE=0
@@ -58,17 +59,21 @@ log "cleaning build tree"
 rm -rf "$BUILD" "$OUT" "$DIST"
 mkdir -p "$BUILD/payload" "$BUILD/launcher" "$OUT/resources" "$DIST"
 
-# --- 1. payload + theme -----------------------------------------------------
+# --- 1. payload + rebrand + theme ------------------------------------------
 log "copying application payload"
 cp -a "$PAYLOAD_SRC/." "$BUILD/payload/"
 
+log "rebranding payload"
+python3 "$ROOT/scripts/patch_payload.py" "$BUILD/payload"
+cp "$ICON_SRC" "$BUILD/payload/icon.png"
+
 log "applying monochrome theme (variant=$VARIANT)"
-cp "$THEME_SRC" "$BUILD/payload/clone-theme.css"
+cp "$THEME_SRC" "$BUILD/payload/ainotes-theme.css"
 
 # Force one palette on both theme classes when a single variant is requested.
 case "$VARIANT" in
   light)
-    cat >> "$BUILD/payload/clone-theme.css" <<'CSS'
+    cat >> "$BUILD/payload/ainotes-theme.css" <<'CSS'
 
 /* Forced light variant: the white palette is used for both theme classes. */
 .theme-dark {
@@ -96,7 +101,7 @@ case "$VARIANT" in
 CSS
     ;;
   dark)
-    cat >> "$BUILD/payload/clone-theme.css" <<'CSS'
+    cat >> "$BUILD/payload/ainotes-theme.css" <<'CSS'
 
 /* Forced dark variant: the black palette is used for both theme classes. */
 .theme-light {
@@ -125,18 +130,18 @@ CSS
     ;;
 esac
 
-# Link the theme after Obsidian's own stylesheet in every HTML entry point.
+# Link the theme after the base stylesheet in every HTML entry point.
 python3 - "$BUILD/payload" <<'PY'
 import pathlib
 import re
 import sys
 
 root = pathlib.Path(sys.argv[1])
-link = '<link href="clone-theme.css" type="text/css" rel="stylesheet"/>'
+link = '<link href="ainotes-theme.css" type="text/css" rel="stylesheet"/>'
 patched = []
 for html in sorted(root.glob("*.html")):
     text = html.read_text(encoding="utf-8")
-    if "clone-theme.css" in text:
+    if "ainotes-theme.css" in text:
         continue
     if "app.css" not in text:
         continue
@@ -155,33 +160,35 @@ PY
 # --- 2. launcher ------------------------------------------------------------
 log "copying and patching launcher"
 cp -a "$LAUNCHER_SRC/." "$BUILD/launcher/"
-python3 "$ROOT/scripts/patch_launcher.py" "$BUILD/launcher/main.js"
+python3 "$ROOT/scripts/patch_launcher.py" "$BUILD/launcher/main.js" "$BUILD/launcher/package.json"
 
 log "packing launcher -> resources/app.asar"
 "$ASAR" pack "$BUILD/launcher" "$OUT/resources/app.asar" --unpack "*.node"
 
 # --- 3. runtime -------------------------------------------------------------
-log "copying Electron 43.8.4 runtime"
+log "copying Electron runtime"
 cp -a "$RUNTIME_SRC/." "$OUT/"
 rm -rf "$OUT/resources"
 mkdir -p "$OUT/resources"
-cp "$RUNTIME_SRC/resources/icon.png" "$OUT/resources/" 2>/dev/null || true
+
+log "rebranding runtime"
+python3 "$ROOT/scripts/patch_runtime.py" "$OUT" "$ICON_SRC"
 
 # re-create the two archives (the runtime copy above restores the originals)
-"$ASAR" pack "$BUILD/payload" "$OUT/resources/obsidian.asar"
+"$ASAR" pack "$BUILD/payload" "$OUT/resources/ainotes.asar"
 "$ASAR" pack "$BUILD/launcher" "$OUT/resources/app.asar" --unpack "*.node"
 
-chmod +x "$OUT/obsidian" "$OUT/AppRun" "$OUT/chrome-sandbox" 2>/dev/null || true
+chmod +x "$OUT/ainotes" "$OUT/AppRun" "$OUT/chrome-sandbox" 2>/dev/null || true
 chmod 4755 "$OUT/chrome-sandbox" 2>/dev/null || true
 
-cat > "$OUT/.obsidian-clone" <<EOF
-obsidian-clone
+cat > "$OUT/.ainotes" <<EOF
+ainotes
 version=1.15.0
 variant=$VARIANT
 built=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 
-log "clone AppDir ready at $OUT"
+log "Ainotes AppDir ready at $OUT"
 du -sh "$OUT"
 ls -la "$OUT/resources"
 

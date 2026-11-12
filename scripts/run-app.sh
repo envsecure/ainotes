@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Run an Obsidian(-clone) AppDir under Xvfb and capture a screenshot.
+# Run an Ainotes AppDir under Xvfb and capture a screenshot.
 #
 #   scripts/run-app.sh <appdir> <label> [--vault <path>] [--seconds N] [--args ...]
 #
 # Every run is fully isolated: HOME, XDG_* and the user-data directory are
-# redirected into a scratch directory so the official application is never
-# touched and two runs never share state.
+# redirected into a scratch directory so two runs never share state.
 # =============================================================================
 set -euo pipefail
 
-APPDIR="${1:?usage: run-app.sh <appdir> <label> [options]}"
+APPDIR="$(cd "${1:?usage: run-app.sh <appdir> <label> [options]}" && pwd)"
 LABEL="${2:?usage: run-app.sh <appdir> <label> [options]}"
 shift 2
 
@@ -27,7 +26,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ -n "$VAULT" ]]; then
+  VAULT="$(cd "$VAULT" && pwd)"
+fi
 RUNROOT="/tmp/opencode/run-$LABEL"
 rm -rf "$RUNROOT"
 mkdir -p "$RUNROOT/home" "$RUNROOT/shots"
@@ -38,8 +39,8 @@ export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_RUNTIME_DIR="$RUNROOT/run"
 mkdir -p "$XDG_RUNTIME_DIR"
-export OBSIDIAN_CLONE_USER_DATA="$RUNROOT/userdata"
-export OBSIDIAN_CLONE_DISABLE_UPDATE=1
+export AINOTES_USER_DATA="$RUNROOT/userdata"
+export AINOTES_DISABLE_UPDATE=1
 
 DISP="${DISPLAY:-:99}"
 if ! xdpyinfo -display "$DISP" >/dev/null 2>&1; then
@@ -56,20 +57,19 @@ if [[ -n "$VAULT" ]]; then
   seed_registry() {
     local dir="$1"
     mkdir -p "$dir"
-    cat > "$dir/obsidian.json" <<EOF
-{"vaults":{"clonevault":{"path":"$VAULT","ts":$(date +%s000),"open":true}}}
+    cat > "$dir/ainotes.json" <<EOF
+{"vaults":{"vault":{"path":"$VAULT","ts":$(date +%s000),"open":true}}}
 EOF
   }
-  seed_registry "$OBSIDIAN_CLONE_USER_DATA"
-  # the official build ignores OBSIDIAN_CLONE_USER_DATA, so seed its profile too
-  seed_registry "$HOME/.config/obsidian"
+  seed_registry "$AINOTES_USER_DATA"
+  seed_registry "$HOME/.config/ainotes"
   echo "[run-app] seeded vault registry -> $VAULT"
 fi
 
 cd "$APPDIR"
 # APP_EXEC / APP_ASAR allow running the same payload on a stock Electron
 # runtime instead of the runtime that ships inside the AppImage.
-EXEC="${APP_EXEC:-$APPDIR/obsidian}"
+EXEC="${APP_EXEC:-$APPDIR/ainotes}"
 APP_ARG=()
 [[ -n "${APP_ASAR:-}" ]] && APP_ARG=("$APP_ASAR")
 "$EXEC" "${APP_ARG[@]}" --no-sandbox "${EXTRA_ARGS[@]}" >"$RUNROOT/app.log" 2>&1 &
@@ -92,11 +92,11 @@ fi
 
 # Report what the app wrote and what it logged.
 echo "[run-app] user data:"
-find "$OBSIDIAN_CLONE_USER_DATA" -maxdepth 2 2>/dev/null | head -25
+find "$AINOTES_USER_DATA" -maxdepth 2 2>/dev/null | head -25
 echo "[run-app] app log tail:"
 tail -20 "$RUNROOT/app.log" 2>/dev/null
 
 kill "$APP_PID" 2>/dev/null || true
 sleep 1
-pkill -f "$APPDIR/obsidian" 2>/dev/null || true
+pkill -f "$APPDIR/ainotes" 2>/dev/null || true
 exit 0

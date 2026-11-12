@@ -1,29 +1,11 @@
 # NOTICE
 
-This repository contains **only** the tooling, the monochrome theme and the
-documentation of the "Obsidian Clone" project (MIT licensed, see `LICENSE`).
+Ainotes is MIT licensed; see `LICENSE`.
 
-## Third-party material
+The build fetches a proprietary third-party application payload from the
+vendor's public release endpoint at build time. That payload is not committed
+to this repository and is not redistributed by it. Third-party components
+bundled inside the payload retain their own licences.
 
-* **Obsidian** (application code, assets, fonts, icons, `app://` renderer
-  assets) — proprietary, © Obsidian.md. It is **downloaded from the official
-  release at build time** by `scripts/fetch-sources.sh` and is neither
-  committed, redistributed nor modified beyond the colour theme applied by
-  `theme/clone-theme.css`.
-* **Electron** (Chromium runtime) — MIT / BSD, © The Chromium Authors and
-  contributors. Shipped by Obsidian's official AppImage and reused
-  unmodified by the clone build.
-* Bundled third-party JavaScript inside Obsidian's payload (CodeMirror 6,
-  MathJax, PDF.js, PixiJS, reveal.js, Prism, Turndown, Defuddle, Readability,
-  i18next, moment, scrypt) keeps its own licence, © its respective authors.
-
-## Trademarks
-
-"Obsidian" and the Obsidian logo are trademarks of Obsidian.md. This project is
-an interoperability and personal-use study; it is not affiliated with, endorsed
-by, or an official build of Obsidian.
-
-## Scope
-
-The clone exists to study how a large Electron application is packaged and
-themed. Use it only with software you are licensed to run.
+This project is an independent build and theming layer. Use it only with
+software you are licensed to run.

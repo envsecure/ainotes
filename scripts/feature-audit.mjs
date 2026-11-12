@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /* ==========================================================================
- * Feature audit for an Obsidian-family Electron application.
+ * Feature audit for the Ainotes Electron application.
  *
  *   node scripts/feature-audit.mjs --cdp http://127.0.0.1:9222 [--json out.json]
  *
  * Runs an identical battery of in-app checks against the running renderer and
- * prints one line per feature. Run it against the official build and against
- * the clone and diff the two outputs: identical results mean identical
- * behaviour, not just identical pixels.
+ * prints one line per feature. Run it before and after a change and diff the
+ * two outputs: identical results mean identical behaviour, not just identical
+ * pixels.
  * ========================================================================== */
 import fs from "node:fs";
 
@@ -135,7 +135,7 @@ await check("custom css snippets dir", "return app.vault.getConfig('enabledCssSn
 await check("theme config", "return app.vault.getConfig('theme');");
 await check("theme class on body", "return document.body.className.includes('theme-light') ? 'light' : document.body.className.includes('theme-dark') ? 'dark' : 'none';");
 await check("toggle theme to dark", `
-  app.vault.setConfig('theme', 'obsidian');
+  app.vault.setConfig('theme', 'ainotes');
   await new Promise(r => setTimeout(r, 400));
   const dark = document.body.className.includes('theme-dark');
   app.vault.setConfig('theme', 'moonstone');

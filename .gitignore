@@ -1,5 +1,5 @@
-# Upstream release artefacts - fetched by scripts/fetch-sources.sh
-# (Obsidian's application code is proprietary and is never committed here)
+# Fetched vendor release artefacts - downloaded by scripts/fetch-sources.sh
+# (the payload is proprietary and is never committed here)
 /original/
 /extracted/
 /launcher/
@@ -8,19 +8,15 @@
 
 # Build output
 /build/
-/clone/
+/ainotes/
 /dist/
 
 # Tooling
 /node_modules/
 /stock-electron/
 /verify/
-/rea-evidence/*.evidence.json
-/rea-evidence/*.json
+__pycache__/
+*.pyc
 npm-debug.log*
 *.log
 .DS_Store
-
-# REA raw evidence bundles are large; curated extracts live in docs/evidence/
-/rea-evidence/
-!docs/evidence/*.log

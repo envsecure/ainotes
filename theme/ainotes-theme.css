@@ -1,7 +1,7 @@
 /* ==========================================================================
-   Obsidian Clone — "Monochrome" minimal theme (pure white / pure black)
+   Ainotes — "Monochrome" minimal theme (pure white / pure black)
    --------------------------------------------------------------------------
-   Loaded after Obsidian's own app.css so it wins on equal specificity.
+   Loaded after the application's own app.css so it wins on equal specificity.
    Only colour, border, radius and shadow tokens are touched.
    Layout, typography, spacing, behaviour and every feature stay untouched.
    ========================================================================== */
@@ -52,7 +52,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   2. Neutralise Obsidian's base colour ramp
+   2. Neutralise the application's base colour ramp
    These feed almost every semantic token below, so replacing the ramp is
    what actually turns the whole UI monochrome.
    -------------------------------------------------------------------------- */
@@ -114,7 +114,7 @@
 
 /* --------------------------------------------------------------------------
    3. Accent colour -> pure black / pure white
-   Obsidian writes the accent as an inline style on <body> when the user
+   The application writes the accent as an inline style on <body> when the user
    picks a colour, so these must be !important to stay monochrome.
    -------------------------------------------------------------------------- */
 .theme-light {
@@ -349,7 +349,7 @@
 	--font-text-theme: var(--font-text);
 }
 
-/* The Obsidian mark is painted with SVG gradients; flatten it to the
+/* The application mark is painted with SVG gradients; flatten it to the
    foreground colour so the whole window stays monochrome. */
 svg path[fill^="url(#logo"] {
 	fill: currentColor !important;
