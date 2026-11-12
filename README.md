@@ -58,6 +58,10 @@ Ainotes. No administrator rights are required — everything is installed below
 shortcut and the `ainotes://` protocol registered. Use `-NoLaunch` to skip
 starting the application and `-Uninstall` to remove it again.
 
+The binaries are not code-signed, so Windows may ask for confirmation once.
+The installer script removes the mark-of-the-web automatically, and the
+per-user setup needs no administrator rights.
+
 ### Manual downloads
 
 | File | Platform | Notes |

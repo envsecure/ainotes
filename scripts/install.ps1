@@ -39,7 +39,9 @@ $InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Ainotes'
 $ExePath = Join-Path $InstallDir 'Ainotes.exe'
 $Uninstaller = Join-Path $InstallDir 'Uninstall.exe'
 
-function Write-Step($message) { Write-Host "==> $message" -ForegroundColor Cyan }
+function Write-Step($message, $color = 'Cyan') {
+    Write-Host "==> $message" -ForegroundColor $color
+}
 
 function Get-Checksum($file) {
     (Get-FileHash -Path $file -Algorithm SHA256).Hash.ToLowerInvariant()
