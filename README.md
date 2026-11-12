@@ -35,11 +35,13 @@ vendor payload ───┘                                      ▲
 curl -fsSL https://raw.githubusercontent.com/envsecure/ainotes/main/scripts/install.sh | sh
 ```
 
-The script installs per user (no root rights needed): the application lands in
+The script installs per user (no root rights needed): the application is
+unpacked into `~/.local/share/ainotes`, a launcher is written to
 `~/.local/bin/ainotes` and a menu entry is created. Options:
 
 ```bash
 ... | sh -- --system     # install system-wide into /usr/local
+... | sh -- --appimage   # install the AppImage instead of the tarball
 ... | sh -- --deb        # install the Debian/Ubuntu package instead
 ... | sh -- --uninstall  # remove a previous installation
 ```
@@ -60,9 +62,9 @@ starting the application and `-Uninstall` to remove it again.
 
 | File | Platform | Notes |
 | --- | --- | --- |
-| `ainotes-linux-x86_64.AppImage` | Linux x86-64 | portable, no installation |
+| `ainotes-linux-x86_64.tar.gz` | Linux x86-64 | portable, unpack and run |
+| `ainotes-linux-x86_64.AppImage` | Linux x86-64 | portable single file |
 | `ainotes-linux-x86_64.deb` | Debian / Ubuntu | native package |
-| `ainotes-linux-x86_64.tar.gz` | Linux x86-64 | portable tarball |
 | `ainotes-windows-x86_64.zip` | Windows x86-64 | portable, no installation |
 | `Ainotes-Setup.exe` | Windows x86-64 | per-user installer |
 

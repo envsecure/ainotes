@@ -20,9 +20,9 @@ irm https://raw.githubusercontent.com/envsecure/ainotes/main/scripts/install.ps1
 
 | File | Platform | Notes |
 | --- | --- | --- |
-| `ainotes-linux-x86_64.AppImage` | Linux x86-64 | portable, no installation |
+| `ainotes-linux-x86_64.tar.gz` | Linux x86-64 | portable, unpack and run |
+| `ainotes-linux-x86_64.AppImage` | Linux x86-64 | portable single file |
 | `ainotes-linux-x86_64.deb` | Debian / Ubuntu | native package |
-| `ainotes-linux-x86_64.tar.gz` | Linux x86-64 | portable tarball |
 | `ainotes-windows-x86_64.zip` | Windows x86-64 | portable, no installation |
 | `Ainotes-Setup.exe` | Windows x86-64 | per-user installer |
 
