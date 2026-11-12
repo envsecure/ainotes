@@ -5,6 +5,7 @@
 /launcher/
 /appimage-extract/
 /readable/
+/windows/
 
 # Build output
 /build/

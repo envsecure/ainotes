@@ -62,3 +62,52 @@ jobs:
             dist/Ainotes-1.15.0.AppImage
             dist/ainotes-1.15.0-linux-amd64.tar.gz
           if-no-files-found: error
+
+  windows:
+    name: build Ainotes (windows, x64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wine64 nsis p7zip-full python3-pip
+          python3 -m pip install --upgrade pefile
+
+      - name: Fetch the vendor release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: scripts/fetch-sources.sh --version 1.15.0
+
+      - name: Build the application payload
+        run: scripts/build.sh --skip-package
+
+      - name: Fetch the vendor Windows release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: scripts/fetch-windows.sh --version 1.15.0
+
+      - name: Build the Windows distribution
+        run: scripts/build-windows.sh
+
+      - name: Verify the rebrand
+        run: |
+          python3 scripts/check_brand.py build/windows/Ainotes
+          test -f build/windows/Ainotes/Ainotes.exe
+          test -f build/windows/Ainotes/Ainotes.com
+          test -f build/windows/Ainotes/resources/ainotes.asar
+          test -f dist/Ainotes-Setup-1.15.0.exe
+
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ainotes-windows-amd64
+          path: |
+            dist/Ainotes-1.15.0-windows-x64.zip
+            dist/Ainotes-Setup-1.15.0.exe
+          if-no-files-found: error

@@ -1,0 +1,150 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (for example v1.15.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: build linux artefacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick p7zip-full
+
+      - name: Fetch the vendor release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: scripts/fetch-sources.sh --version 1.15.0
+
+      - name: Build Ainotes
+        run: scripts/build.sh
+
+      - name: Verify rebrand
+        run: |
+          rm -rf verify
+          mkdir -p verify
+          node_modules/.bin/asar extract ainotes/resources/ainotes.asar verify/payload
+          node_modules/.bin/asar extract ainotes/resources/app.asar verify/launcher
+          python3 scripts/check_brand.py verify/payload verify/launcher
+
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-dist
+          path: |
+            dist/ainotes_1.15.0_amd64.deb
+            dist/Ainotes-1.15.0.AppImage
+            dist/ainotes-1.15.0-linux-amd64.tar.gz
+
+  windows:
+    name: build windows artefacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wine64 nsis p7zip-full python3-pip
+          python3 -m pip install --upgrade pefile
+
+      - name: Fetch the vendor release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: scripts/fetch-sources.sh --version 1.15.0
+
+      - name: Build the application payload
+        run: scripts/build.sh --skip-package
+
+      - name: Fetch the vendor Windows release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: scripts/fetch-windows.sh --version 1.15.0
+
+      - name: Build the Windows distribution
+        run: scripts/build-windows.sh
+
+      - name: Verify rebrand
+        run: |
+          python3 scripts/check_brand.py build/windows/Ainotes
+          test -f build/windows/Ainotes/Ainotes.exe
+          test -f build/windows/Ainotes/Ainotes.com
+          test -f build/windows/Ainotes/resources/ainotes.asar
+
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-dist
+          path: |
+            dist/Ainotes-1.15.0-windows-x64.zip
+            dist/Ainotes-Setup-1.15.0.exe
+
+  publish:
+    name: publish the release
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefacts
+
+      - name: Collect the release assets
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp artefacts/linux-dist/ainotes_1.15.0_amd64.deb          release/ainotes-linux-x86_64.deb
+          cp artefacts/linux-dist/Ainotes-1.15.0.AppImage           release/ainotes-linux-x86_64.AppImage
+          cp artefacts/linux-dist/ainotes-1.15.0-linux-amd64.tar.gz release/ainotes-linux-x86_64.tar.gz
+          cp artefacts/windows-dist/Ainotes-1.15.0-windows-x64.zip  release/ainotes-windows-x86_64.zip
+          cp artefacts/windows-dist/Ainotes-Setup-1.15.0.exe        release/Ainotes-Setup.exe
+          cp assets/ainotes.png                                     release/ainotes-linux-icon.png
+          cp scripts/install.sh                                     release/install.sh
+          cp scripts/install.ps1                                    release/install.ps1
+          cp docs/RELEASE-NOTES.md                                  release/notes.md
+          cd release
+          sha256sum ainotes-linux-x86_64.deb \
+                    ainotes-linux-x86_64.AppImage \
+                    ainotes-linux-x86_64.tar.gz \
+                    ainotes-windows-x86_64.zip \
+                    Ainotes-Setup.exe \
+                    ainotes-linux-icon.png \
+                    install.sh \
+                    install.ps1 > SHA256SUMS
+          ls -lh
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release/* --clobber
+          else
+            gh release create "$TAG" release/* \
+              --title "Ainotes $TAG" \
+              --notes-file release/notes.md
+          fi

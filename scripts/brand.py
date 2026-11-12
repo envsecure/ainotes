@@ -37,3 +37,12 @@ def contains_source(text: str) -> bool:
 
 def contains_source_bytes(data: bytes) -> bool:
     return SOURCE_LOWER.encode("ascii") in data.lower()
+
+
+def contains_source_utf16(data: bytes) -> bool:
+    """True when UTF-16LE text still contains a vendor token."""
+    return SOURCE_LOWER.encode("utf-16le") in data.lower()
+
+
+def contains_source_any(data: bytes) -> bool:
+    return contains_source_bytes(data) or contains_source_utf16(data)

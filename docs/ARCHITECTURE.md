@@ -18,6 +18,14 @@ launcher app.asar ──────┴──► patch_launcher.py ──► app
                                                                        ├──► .deb
                                                                        ├──► AppImage
                                                                        └──► .tar.gz
+
+vendor Windows ──► Electron/Chromium runtime (x64) ──► patch_windows.py ──► Ainotes.exe
+                        │                                                 Ainotes.com
+                        ├──► patch_launcher.py ──► app.asar               resources/ainotes.asar
+                        │                                                 │
+                        └──► ainotes.asar (payload from the Linux build) ┤
+                                                                          ├──► .zip
+                                                                          └──► NSIS installer
 ```
 
 ### 1. Fetch
@@ -112,6 +120,38 @@ requested.
 * an AppImage assembled from the vendor runtime prefix plus a fresh squashfs;
 * a tarball containing the AppDir.
 
+### 7. Windows
+
+The Windows distribution is assembled from the vendor's Windows runtime and
+the payload that the Linux build already produced. The payload is
+cross-platform, so it is reused unchanged.
+
+`scripts/fetch-windows.sh` downloads the vendor's Windows installer and
+extracts the x64 application tree (`resources/app.asar` launcher, the two
+executables, the Chromium runtime and the native modules).
+
+`scripts/build-windows.sh` then:
+
+1. extracts the Windows launcher, patches it with `patch_launcher.py` and
+   repacks it as `resources/app.asar` (the Windows native modules stay
+   unpacked next to it);
+2. copies the rebranded payload to `resources/ainotes.asar`;
+3. runs `scripts/patch_windows.py`, which
+   * renames the executables to `Ainotes.exe` and `Ainotes.com`;
+   * rewrites the PE version resources and the icon with `rcedit`;
+   * patches the brand strings compiled into the executables (CLI message, CLI
+     pipe name, one Chromium device label, two native-module debug paths);
+   * refreshes Electron's embedded asar integrity manifest with the new file
+     names and SHA-256 hashes;
+   * removes the now invalid vendor signature;
+4. verifies that the whole tree is free of vendor brand tokens;
+5. packs `dist/Ainotes-<version>-windows-x64.zip`;
+6. builds the per-user NSIS installer `dist/Ainotes-Setup-<version>.exe`.
+
+`scripts/installer.nsi` installs into `%LOCALAPPDATA%\Programs\Ainotes`
+without administrator rights, creates the Start-menu and desktop shortcuts,
+registers the `ainotes://` protocol and writes the per-user uninstall entry.
+
 ## Runtime layout
 
 | Path | Purpose |
@@ -125,6 +165,10 @@ requested.
 | `~/.config/ainotes/ainotes.json` | vault registry |
 | `<vault>/.ainotes/` | per-vault configuration |
 | `<vault>/.trash/` | trash |
+
+On Windows the same layout is used, with the profile below
+`%APPDATA%\ainotes` and the application below
+`%LOCALAPPDATA%\Programs\Ainotes`.
 
 ## Verification
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from brand import SOURCE_LOWER, contains_source_bytes
+from brand import SOURCE_LOWER, contains_source_any
 
 
 def main() -> int:
@@ -36,7 +36,7 @@ def main() -> int:
                 data = path.read_bytes()
             except OSError:
                 continue
-            if contains_source_bytes(data):
+            if contains_source_any(data):
                 hits.append(path)
 
     if hits:
